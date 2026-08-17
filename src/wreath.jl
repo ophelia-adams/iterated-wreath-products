@@ -18,6 +18,8 @@ struct Wreath{N, T}
     end
 end
 
+Base.one(W::Wreath{N,T}) where {N, T} = Wreath{N,T}(Tuple(one(T) for _ in 1:N), one(W.perm))
+
 function Base.show(io::IO, w::Wreath{N, T}) where {N, T}
     print(io, w.tuple)
     print(io, w.perm)

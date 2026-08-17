@@ -1,10 +1,8 @@
 # TODO
 
 ## permutations.jl
-- Implement `Base.one` (identity element).
 
 ## wreath.jl
-- Implement `Base.one` (identity element).
 
 ## wreathexpr.jl
 - Figure out how to match on parametrized types in the rules to eliminate helper functions `wreathdim` and `wreathtype`.
