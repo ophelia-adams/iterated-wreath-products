@@ -16,10 +16,19 @@ struct Wreath{N, T}
     function Wreath{N, T}(tuple::NTuple{N, T}, perm::Perm{N}) where {N, T}
         new{N, T}(tuple, perm)
     end
+
+    function Wreath(tuple::NTuple{N, T}, perm::Perm{N}) where {N, T}
+        new{N, T}(tuple, perm)
+    end
 end
 
+Base.one(::Wreath{N, T}) where {N, T} = Wreath{N, T}(Tuple(one(T) for i in 1:N), one(Σ{N}))
+Base.one(::Type{Wreath{N, T}}) where {N, T} = Wreath{N, T}(Tuple(one(T) for i in 1:N), one(Σ{N}))
+
+Base.:(==)(w1::Wreath{N, T}, w2::Wreath{N, T}) where {N, T} = w1.tuple == w2.tuple && w1.perm == w2.perm
+
 function Base.show(io::IO, w::Wreath{N, T}) where {N, T}
-    print(io, w.tuple)
+    w.tuple == Tuple(one(T) for i in 1:N) ? "" : print(io, w.tuple)
     print(io, w.perm)
 end
 
@@ -47,7 +56,7 @@ end
 Pointwise inverse of tuples.
 """
 function Base.inv(t::NTuple{N, T})::NTuple{N, T} where {N, T}
-    Tuple(Base.inv(t1[i]) for i in 1:N)
+    Tuple(Base.inv(t[i]) for i in 1:N)
 end
 
 """
@@ -56,7 +65,7 @@ end
 Raises the tuple `t` pointwise to the `n`-th power..
 """
 function Base.:^(t::NTuple{N, T}, n::Int)::NTuple{N, T} where {N, T}
-    Tuple(t1[i]^n for i in 1:N)
+    Tuple(t[i]^n for i in 1:N)
 end
 
 """
@@ -65,7 +74,7 @@ end
 Multiplication in the wreath product.
 """
 function Base.:*(w1::Wreath{N, T}, w2::Wreath{N, T})::Wreath{N, T} where {N, T}
-    Wreath{N, T}(w1.tuple * (w2.tuple ^ (w1.perm^(-1))), w1.perm * w2.perm)
+    Wreath{N, T}(w1.tuple * (w2.tuple ^ (inv(w1.perm))), w1.perm * w2.perm)
 end
 
 """
@@ -74,6 +83,46 @@ end
 Taking inverses in the wreath product.
 """
 function Base.inv(w::Wreath{N, T})::Wreath{N, T} where {N, T}
-    Wreath{N, T}((w.tuple^(-1))^(w.perm), w.perm^(-1))
+    Wreath{N, T}((inv(w.tuple))^(w.perm), inv(w.perm))
 end
 
+
+# ======== Iterated Wreath Products ======== #
+
+
+"""
+    IteratedWreath{N}
+
+Represents an iterated wreath product: `IteratedWreath{N} ≅ IteratedWreath{N} ≀ Σ{N}`.
+If `value` is set to `nothing`, it is the identity element.
+"""
+struct IteratedWreath{N}
+    value::Union{Wreath{N, IteratedWreath{N}}, Nothing}
+
+    function IteratedWreath{N}(value::Union{Wreath{N, IteratedWreath{N}}, Nothing}) where N
+        new{N}(value)
+    end
+
+    function IteratedWreath(tuple::NTuple{N, IteratedWreath{N}}, g::Perm{N}) where N
+        new{N}(Wreath{N, IteratedWreath{N}}(tuple, g))
+    end
+end
+
+Base.one(::IteratedWreath{N}) where N = IteratedWreath{N}(nothing)
+Base.one(::Type{IteratedWreath{N}}) where N = IteratedWreath{N}(nothing)
+
+function Base.show(io::IO, w::IteratedWreath{N}) where N
+    w.value == nothing ? print(io, "1") : print(io, w.value)
+end
+
+function Base.:*(w1::IteratedWreath{N}, w2::IteratedWreath{N}) where N
+    w1.value == nothing && return w2
+    w2.value == nothing && return w1
+
+    IteratedWreath{N}(w1.value * w2.value)
+end
+
+function Base.inv(w::IteratedWreath{N}) where N
+    w.value == nothing && return w
+    IteratedWreath{N}(inv(w.value))
+end
