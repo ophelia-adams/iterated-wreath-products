@@ -1,3 +1,7 @@
+# Original code: https://github.com/ophelia-adams/Monodromy.jl/blob/main/src/core/permutations.jl
+# Original Author: Ophelia Adams
+# ================================
+
 """
 An abstract type that encompasses both `Σ{N}` and `Cyc{N}`. Used in wreath products.
 """
@@ -12,7 +16,7 @@ end
 """
     Σ{N}
 
-Wrapper over an N-tuple representing a permutation. The inner constructor checks it is a permutation.
+Wrapper over an N-tuple representing a permutation. The inner constructors check it is a permutation.
 """
 struct Σ{N} <: Perm{N}
     perm::NTuple{N, Int}
@@ -23,13 +27,18 @@ struct Σ{N} <: Perm{N}
         new{N}(p, name)
     end
 
+    function Σ(p::NTuple{N, Int}, name=nothing) where N
+        Set(p) == Set(1:N) || throw("$p is not a valid permutation.")
+        new{N}(p, name)
+    end
+
     # Variant of constructor that returns the identity element.
     Σ{N}() where N = new{N}(Tuple(1:N), :id)
 end
 
-Base.one(P::Σ{N}) where N = Σ{N}()
-Base.one(T::Type{Σ{N}}) where N = Σ{N}()
-
+# identity permutation
+Base.one(::Σ{N}) where N = Σ{N}()
+Base.one(::Type{Σ{N}}) where N = Σ{N}()
 
 Base.getindex(p::Σ{N}, i::Int) where N = p.perm[i]
 Base.isempty(p::Σ{N}) where N = isempty(p.perm)
@@ -221,6 +230,8 @@ struct Cyc{N} <: Perm{N}
     function Cyc{N}(k::Int, name=:σ) :: Cyc{N} where N
         new{N}(mod(k, N), name)
     end
+
+    Cyc{N}() where N = Cyc{N}(0)
 end
 
 
@@ -275,3 +286,4 @@ Raises `g` to the `n`-th power.
 function Base.:^(g::Cyc{N}, n::Int)::Cyc{N} where N
     Cyc{N}(g.pow * n, g.name)
 end
+
